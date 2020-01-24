@@ -1,4 +1,4 @@
-
+//CREADO POR GERARDO ESCUDERO LÓPEZ PARA LA ASIGNATURA DE PROYECTOS I
 #include <Adafruit_BMP280.h>//Especifica del senor
 #include <Adafruit_Sensor.h>//comun para todos los sensores de adafruit
 
@@ -22,7 +22,7 @@ short int posicionCanal = 0;
 int detectarSonido;
 unsigned short int velocidad;
 int sol; //nada asignado, para cuando incluya el sensor de luz
-float agua;// si,no del sensor 
+float agua;// deetectar la cantidad de agua que detecta el sensor 
 //motor
 int motor = analogRead(A2);
 //Pines
@@ -39,7 +39,7 @@ int estadoBotonIncremento;
 int estadoBotonIncrementoAnterior;
 
 //decremento
-int estadoBotonDecremento;
+int estadoBotonDecremento; //utilizo dos para ver el cambio de un estado al otro al comparar sus estados
 int estadoBotonDecrementoAnterior;
 
 boolean antirebote(int pin) {
@@ -49,16 +49,16 @@ boolean antirebote(int pin) {
 
   do{
     estado =  digitalRead(pin);
-    if(estado != estadoAnterior){
-      contador =0;
-      estadoAnterior=estado;
+    if(estado != estadoAnterior){ //Si ha cmabido el estado (HIGH/LOW)
+      contador =0;                //La cuenta vuelve a empezar 
+      estadoAnterior=estado;      //Toma este como el nuevo estado
       }
-       else ++contador;
+       else ++contador;           //asi hasta que deje de haber variaciones en el estado del boton en poco tiempo (Ruido/rebote)
   }
- 
-  while(contador<tiempoAntirrebote);
-  return estado;
-}
+  while(contador<tiempoAntirrebote);//Importante no poner un tiempoAntirrebote alto pues en el tiempo que esté
+  return estado; //confirmando el cambio no leera nada más(sin romper el ciclo).
+
+}//Esto es en binario para crear cada array de bits y luego poder dibujar figuras en el lcd
 byte smile[8] = {
   0b00000000,
   0b00001010,
@@ -153,12 +153,8 @@ byte crack[8] = {
 };
 
 void setup(){
-  if (!bmp.begin()) {
-    Serial.println(F("Could not find a valid BMP280 sensor, check wiring!"));
-    while (1);
-  }
-
-  /* Default settings from datasheet. */
+  
+  /* datos por defecto de la hoja de datos */
   bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
                   Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
                   Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
@@ -166,13 +162,13 @@ void setup(){
                   Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
 
 
-  lcd.init();
-  lcd.backlight();
+  lcd.init();                         //inicio del lcd
+  lcd.backlight();                    //encender la luz trasera
   
-  lcd.begin(16, 2); // Indicar a la libreria que tenemos conectada una pantalla de 16x2
+  lcd.begin(16, 2);                   // Indicar a la libreria que tenemos conectada una pantalla de 16x2
 
-  lcd.createChar (0, smile);
-  lcd.createChar (1, sun);
+  lcd.createChar (0, smile);          //Utiliza los caracteres vacios de la libreria y su tabla AscII  
+  lcd.createChar (1, sun);            //para dejarnos las 7 primeras posiciones para asociarlas al array de bits que defini en el Setup
   lcd.createChar (2, rainy);
   lcd.createChar (3, cloud);
   lcd.createChar (4, sunHalf);
@@ -181,13 +177,14 @@ void setup(){
   lcd.createChar (7,crack);
 
  //Dibujo del inicio
-  lcd.home ();// Mover el cursor a la primera posición de la pantalla (0, 0)
-  lcd.print("Bienvenido");// Imprimir "Bienvenido" en la primera linea
+  lcd.home ();                          // Mover el cursor a la primera posición de la pantalla (0, 0)
+  lcd.print("Bienvenido");              // Imprimir "Bienvenido" en la primera linea
   
-  lcd.setCursor ( 0, 1 );// Mover el cursor a la segunda linea (1) primera columna
-  lcd.print("Usuario");// Imprimir otra cadena en esta posicion
+  lcd.setCursor ( 0, 1 );               // Mover el cursor a la segunda linea (1) primera columna
+  lcd.print("Usuario");                 // Imprimir otra cadena en esta posicion
   lcd.setCursor (8,1);
-  lcd.write((byte)0);
+  lcd.write((byte)0);                   /*La diferencia entre lcd.write y lcd.print es que el print interpreta los datos antes de
+                                          mandarselos al lcd.write que los escribe e la pantalla*/
 
   //gota 
   lcd.setCursor (9,1);
@@ -200,7 +197,8 @@ void setup(){
  //LLueve. posicion y luego lo escribo
   lcd.setCursor (12,1);
   lcd.write((byte)2);
-
+  
+  //demas dibujos de la pantalla de carga
   lcd.setCursor (13,1);
   lcd.write((byte)3);
 
@@ -212,42 +210,44 @@ void setup(){
   
   // Esperar 4 segundos
   delay(4000);
-  lcd.clear();
+  lcd.clear(); //Limpio de escritura el lcd
 
-  
+    /*declaracion de los modos de pin del arduino, se declaran los pines digitales(que pueden PWM)
+      los analoficos no tiene sentido pues son siempre de entrada*/
   pinMode (pinLED, OUTPUT);
   pinMode (pinMicrofono, INPUT);
   pinMode (pinBoton1, INPUT);
   pinMode (pinBoton2, INPUT);
   
-  Serial.begin(9600);
+  Serial.begin(9600);     //iniciar comunicacion serial con el arduino a 9600 gaudios.
 }
 
 void loop()
 { 
 
-Serial.println(motor);
+Serial.println(motor);    //escribo y cambio de linea el valor del ventilador
    
   //Actualizar variables
   motor = analogRead(A2);
-  motor = motor * 0.2491;
+  motor = motor * 0.2491; //este *0.2491 lo calculé con el coche y una tabla.
   int chk = int(DHT.read11(DHT11_PIN));
   agua = analogRead(A1);
-  detectarSonido = digitalRead(pinMicrofono);
+  detectarSonido = digitalRead(pinMicrofono);      //Solo me interesa si supera cierto valor asi que puedo leerlo 
+                                                  //como un digital y configurarlo con el potenciometro incorporado
   sol =analogRead(A0);
   
   //REVISAR EL ESTADO DEL BOTON
 estadoBotonIncremento = digitalRead(pinBoton1);
-if(estadoBotonIncremento !=estadoBotonIncrementoAnterior){
-  if(antirebote(pinBoton1)){
-    ++canal;
-    if(canal >7)canal=0;
+if(estadoBotonIncremento !=estadoBotonIncrementoAnterior){ //si está pulsado el boton de aumentar
+  if(antirebote(pinBoton1)){                               //y el antirebote lo confirma
+    ++canal;                                               //cambia de canal
+    if(canal >7)canal=0;                                   //si llegas al maximo de canales, vuelve al 0;
     }
   }
-  estadoBotonIncrementoAnterior = estadoBotonIncremento;
+  estadoBotonIncrementoAnterior = estadoBotonIncremento;    //y pon el estado anterior como el actual(util si lo dejas pulsado y luego lo sueltas)
  
  //Funcion para disminuir el canal 
-estadoBotonDecremento = digitalRead(pinBoton2);
+estadoBotonDecremento = digitalRead(pinBoton2);             //Igual que el anterior pero en el sentido contrario
 if(estadoBotonDecremento !=estadoBotonDecrementoAnterior){
   if(antirebote(pinBoton2)){
     --canal;
@@ -260,62 +260,59 @@ if(estadoBotonDecremento !=estadoBotonDecrementoAnterior){
 
 
 
-switch (canal) {
+switch (canal) {                                            //una vez obtiene todos los datos, entra en un switch dependiendo del canal en el que se encuentre
+  //canal general con todos los datos
   case 0:
   //LIMPIEZA DE DATOS ANTERIORES
   lcd.clear();
      //Imprimir resultados Primera Fila
-        lcd.home();
-        lcd.print("Wa ");// Imprimir el agua arriba  ala izquierda
+        lcd.home();                                         //Cambia su posicion al 0,0 del lcd
+        lcd.print("Wa ");                                   // Imprimir el agua arriba  ala izquierda
         lcd.setCursor(3,0);
-       /* if(agua>300){
-          lcd.write(((byte)6));
-          }
-          else{
-            lcd.write(47);
-            }
-            agua=analogRead(A1);*/
-        lcd.write((agua>300)?((byte)6):(47));
+        lcd.write((agua>300)?((byte)6):(47));               //Escribe el dibujo de una gota o la barra lateral en codigo ASCI
         
         //Luz
         lcd.setCursor(5,0);
         lcd.print("L ");
         lcd.setCursor(7,0);
-        lcd.write((sol>700)?((byte)5):((sol<250)?((byte)3):((byte)4)));//muestra la luz ahora
+        lcd.write((sol>700)?((byte)5):((sol<250)?((byte)3):((byte)4)));//muestra la luz ahora con 3 dibujos distintos
       
-        //Presion
+        //Escribe la presion en mB 
         lcd.setCursor(9,0);
         lcd.print("P ");
         lcd.print(bmp.readPressure());
-        lcd.print("mB");
+        lcd.setCursor(14,0);                                //(podria dividir entre 100 para hPascales y conversiondirecta a mB,
+        lcd.print("mB");                                    // pero si sobre escribo a partir del numero correcto me lo ahorro
+
       
-     //Segunda Fila
+    //Segunda Fila
         //Sonido
         lcd.setCursor(0,1);
         lcd.print("S ");
         lcd.setCursor(2,1);
-        lcd.write(detectarSonido?((byte)7):(47)); //muestra si el sonido supera el especificado o no
+        lcd.write(detectarSonido?((byte)7):(47)); //Se muestra si el sonido supera el especificado
       
         //Humedad
         lcd.setCursor(4,1);
         lcd.print("H ");
         lcd.setCursor(6,1);
-        lcd.print(DHT.humidity);
+        lcd.print(DHT.humidity);                  //leer la humedad
         lcd.setCursor(8,1);
-        lcd.write(37);
+        lcd.print("%");
       
         //TªC
-         lcd.setCursor(8,1);
-         lcd.print(" T*");
+         lcd.setCursor(9,1);
+         lcd.print("T*");
          lcd.print(bmp.readTemperature());
-    break;
-      case 1:
+    break;                                        //Salimos del caso de la pantlla general 
+      case 1:                                     //Entramos en el caso leer solo agua
         //Agua
          lcd.clear();
          lcd.home();
          lcd.print("Valor Agua:");
          lcd.setCursor(1,1);
          lcd.print(agua);
+        //Posicion en el canal, es repetido a lo largo del codigo
          lcd.setCursor(12,1);
          lcd.print(canal);
          lcd.setCursor(13,1);
@@ -329,6 +326,7 @@ switch (canal) {
          lcd.setCursor(3,1);
          lcd.print(bmp.readTemperature());
          lcd.print(" C");
+         //Posicion en el canal, es repetido a lo largo del codigo
          lcd.setCursor(12,1);
          lcd.print(canal);
          lcd.setCursor(13,1);
@@ -343,10 +341,11 @@ switch (canal) {
         lcd.print(int(DHT.humidity));
         lcd.setCursor(5,1);
         lcd.print("% ");
-        lcd.setCursor(12,1);
+        //Posicion en el canal, es repetido a lo largo del codigo
+         lcd.setCursor(12,1);
          lcd.print(canal);
          lcd.setCursor(13,1);
-         lcd.print("/6");
+         lcd.print("/7");
         
     break;
     case 4:
@@ -357,9 +356,10 @@ switch (canal) {
          lcd.setCursor(0,1);
         lcd.print(bmp.readPressure());
         lcd.print(" PA");
-        lcd.setCursor(12,0);
+       //Posicion en el canal, es repetido a lo largo del codigo
+         lcd.setCursor(12,1);
          lcd.print(canal);
-         lcd.setCursor(13,0);
+         lcd.setCursor(13,1);
          lcd.print("/7");
     break;
     case 5:
@@ -369,6 +369,7 @@ switch (canal) {
          lcd.print("LUMINOSIDAD:");
          lcd.setCursor(3,1);
          lcd.print(sol);
+        //Posicion en el canal, es repetido a lo largo del codigo
          lcd.setCursor(12,1);
          lcd.print(canal);
          lcd.setCursor(13,1);
@@ -383,47 +384,47 @@ switch (canal) {
          lcd.print(motor);
          lcd.setCursor(4,1);
          lcd.print("KM/H");
+       //Posicion en el canal, es repetido a lo largo del codigo
          lcd.setCursor(12,1);
          lcd.print(canal);
          lcd.setCursor(13,1);
          lcd.print("/7");
     break;
-    case 7:
+    case 7:   //Parte METEOROLOGICO
     lcd.clear();
          lcd.home();
-      //Parte METEOROLOGICO
-      
-      if(sol>700){
+      if(sol>700){                              //Si no hay una sola nuve, no puede llover
         lcd.print("Hoy hace sol");
         }
-      else if(sol>500){
+      else if(sol>500){                         //pero si hay sol y nubes si
           if (agua>400){
             lcd.print("Se vera el arco");
             lcd.setCursor(0,1);
             lcd.print("iris");
             }
-          else lcd.print("Hay nubes y claros");
+          else lcd.print("Hay nubes y claros"); //Pero no obligatoriamente
       }
-      else{
-        if (agua>400){
-          if(detectarSonido==HIGH)lcd.print("Hay tormenta");
-          else lcd.print("LLueve fuerte");
+      else{                                                   //Por el contrario, si no se ve el sol
+        if (agua>400){                                        //Hay agua
+          if(detectarSonido==HIGH)lcd.print("Hay tormenta"); //Y el sensor de relampagos dice que asi es, pues hay tormenta electrica
+          else lcd.print("LLueve fuerte");                    //Como las llaves son opcionales en elementos de una sola condicion, los quito por estetica
         }
         else lcd.print("Nublado");
       }  
-    lcd.setCursor(12,1);
-    lcd.print(canal);
-    lcd.setCursor(13,1);
-    lcd.print("/7");
+    //Posicion en el canal, es repetido a lo largo del codigo
+         lcd.setCursor(12,1);
+         lcd.print(canal);
+         lcd.setCursor(13,1);
+         lcd.print("/7");
     break;
-  default:
+  default: //no llegará nunca a salir por la funcion de control pero por si acaso
     lcd.clear();
          lcd.home();
-         lcd.print("   TE SALISTE   ");
+         lcd.print("   TE SALISTE   ");     //Se pueden usar espacios para "Borrar" contenido
          
     break;
 }
 
 
-  delay(1000);
+  delay(1000);                              //ya que estoy borrando y escribinedo todo el rato, habria sensores que cambiarian demasiado rapido como para ver el numero
 }
