@@ -59,7 +59,7 @@ boolean antirebote(int pin) {
   return estado; //confirmando el cambio no leera nada más(sin romper el ciclo).
 
 }//Esto es en binario para crear cada array de bits y luego poder dibujar figuras en el lcd
-byte smile[8] = {
+byte smile[8] = { //el primer 0b000 es para especificar binario, solo aparecen representados en el lcd los siguientes 5 digitos
   0b00000000,
   0b00001010,
   0b00001010,
